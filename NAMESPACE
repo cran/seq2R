@@ -1,0 +1,6 @@
+exportPattern("^[[:alpha:]]+")
+useDynLib(seq2R)
+importFrom("seqinr", s2c)
+importFrom("graphics", plot, lines, legend, par, layout, image, contour, plot.new, title)
+S3method("print", "change.points")
+S3method("plot", "change.points")
