@@ -1,18 +1,18 @@
 \name{plot.change.points}
 \alias{plot.change.points}
-%- Also NEED an '\alias' for EACH other topic documented here.
+
 \title{Visualization of change.points objects
 }
 \description{
-Useful for drawing the estimation and first derivative of the skew profile.%for each base pairs.
+Useful for drawing the estimation and first derivative of the skew profile.
 }
 \usage{
 
-\method{plot}{change.points}(x = model, y = NULL, base.pairs = NULL, der = NULL, 
-xlab = "x", ylab = "y", col = "black", CIcol = "black", main = NULL, type = "l", 
+\method{plot}{change.points}(x = model, y = NULL, base.pairs = NULL, der = NULL,
+xlab = "x", ylab = "y", col = "black", CIcol = "black", main = NULL, type = "l",
 CItype = "l", critical = FALSE, CIcritical = FALSE,ylim=NULL,...)
 }
-%- maybe also 'usage' for other objects documented here.
+
 \arguments{
   \item{x}{
  \code{change.points} object.
@@ -53,54 +53,32 @@ An overall title for the plot.
 Other options.
 }
 }
-%\details{
-%hh
-%}
+
 \value{
   Simply produce a plot.
 }
-%\references{
-%hhh}
+
 \author{
-Nora M. Villanueva, Marta Sestelo and Javier Roca-Pardinas.
+Nora M. Villanueva and Marta Sestelo.
 }
-%\note{
-%hhh
-%}
 
-%% ~Make other sections like Warning with \section{Warning }{....} ~
-
-%\seealso{
-%% ~~objects to See Also as \code{\link{help}}, ~~~
-%}
 \examples{
 library(seq2R)
 
-# human mitochondrial DNA data
+
 mtDNAhuman <- read.genbank("NC_012920")
 DNA<- change.binary(mtDNAhuman)
 seq1<-change.points(DNA)
 
-# Specifying the base pairs CG,
-#the estimates, their first derivative and 
-# 95% confidence intervals of the critical points
-par(mfrow=c(2,1))
+
+
 plot(seq1,der=0,base.pairs="CG",CIcritical=TRUE,ylim=c(0.08,0.67))
 plot(seq1,der=1,base.pairs="CG",CIcritical=TRUE,ylim=c(-0.0005,0.00045))
 abline(h=0)
 
-# Specifying the base pairs AT,
-#the estimates, their first derivative and 
-# 95% confidence intervals of the critical points
-par(mfrow=c(2,1))
-plot(seq1,der=0,base.pairs="AT",CIcritical=TRUE)
-plot(seq1,der=1,base.pairs="AT",CIcritical=TRUE)
-abline(h=0)
 
-# Visualization of change.points objects
+
 plot(seq1,critical=TRUE, CIcritical=TRUE)
 }
-% Add one or more standard keywords, see file 'KEYWORDS' in the
-% R documentation directory.
+
 \keyword{plot}
-%\keyword{hh}% __ONLY ONE__ keyword per line

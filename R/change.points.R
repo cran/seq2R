@@ -1,5 +1,5 @@
 change.points <-
-function(x,kbin=300, p=3,h=-1,W=1,nboot=100,kernel="gaussian",nh=30){
+function(x,kbin=300, p=3,h=-1,W=1,nboot=100,kernel="gaussian",nh=20, seed = NULL, ...){
 	etiquetas<-unique(names(x))
 	if(kernel=="gaussian")  kernel=2
 	if(kernel=="epanech")      kernel=1
@@ -8,7 +8,7 @@ function(x,kbin=300, p=3,h=-1,W=1,nboot=100,kernel="gaussian",nh=30){
 	t = matrix(ncol=2,nrow=kbin)
 	m = matrix(ncol=2,nrow=kbin)
 	lCI = matrix(ncol=2,nrow=kbin)
-	uCI = matrix(ncol=2,nrow=kbin) 
+	uCI = matrix(ncol=2,nrow=kbin)
 	m1 = matrix(ncol=2,nrow=kbin)
 	lCI1 = matrix(ncol=2,nrow=kbin)
 	uCI1 = matrix(ncol=2,nrow=kbin)
@@ -16,22 +16,30 @@ function(x,kbin=300, p=3,h=-1,W=1,nboot=100,kernel="gaussian",nh=30){
 	lcritical= matrix(ncol=2,nrow=kbin)
 	ucritical= matrix(ncol=2,nrow=kbin)
 	#mar = matrix(ncol=2,nrow=100)
-	
+
 	N=c()
 	hhA=c()
 	hhT=c()
-	
+
+	if (!is.null(seed)) {
+	  set.seed(seed)
+	}
+
+
+
 	for(i in 1:2){
 
 		A=x[[i]][[1]][,2] # sirve para Adeninas o para Guaninas
 		T=x[[i]][[1]][,3] # sirve para Timinas o para Citosinas
-		X=x[[i]][[1]][,1] 
+		X=x[[i]][[1]][,1]
 		n=length(X)
-		
+		umatrixA <- matrix(runif(n*nboot), ncol = nboot, nrow = n)
+		umatrixT <- matrix(runif(n*nboot), ncol = nboot, nrow = n)
+
 		#Y=rep(1,n)
 		W=rep(1,n)
-		#if(W==1){W=rep(1,n)}	
-	change.points<-.Fortran("fonseca",
+		#if(W==1){W=rep(1,n)}
+	change.points<-.Fortran("change.points_",
 			n = as.integer(n),
 			hA= as.double(h[i]),
 			hT=as.double(h[i]),
@@ -39,7 +47,7 @@ function(x,kbin=300, p=3,h=-1,W=1,nboot=100,kernel="gaussian",nh=30){
 			A = as.double(A),
 			T = as.double(T),
 			#Y = as.double(Y),
-			X = as.double(X),		
+			X = as.double(X),
 			W = as.double(W),
 			Xb = as.double(rep(-1.0,kbin)),
 			AT = as.double(rep(-1.0,kbin)),
@@ -54,10 +62,13 @@ function(x,kbin=300, p=3,h=-1,W=1,nboot=100,kernel="gaussian",nh=30){
 			nboot=as.integer(nboot),
 			kbin=as.integer(kbin),
 			kernel=as.integer(kernel),
-			nh=as.integer(nh)
+			nh=as.integer(nh),
+			umatrixA <- array(umatrixA, c(n, nboot)),
+			umatrixT <- array(umatrixT, c(n, nboot)),
+			PACKAGE = "seq2R"
 			#marta=as.double(rep(-1.0,100))
 			#atboot=array(rep(-1.0),c(kbin,nboot)),
-			)	
+			)
 	#mar[,i]<-change.points$marta
 	t[,i]<-change.points$Xb
 	m[,i]<-change.points$AT
@@ -73,7 +84,7 @@ function(x,kbin=300, p=3,h=-1,W=1,nboot=100,kernel="gaussian",nh=30){
 	hhA[i]<-change.points$hA
 	hhT[i]<-change.points$hT
 	}
-	
+
 	hAT=hhA[1]
 	hCG=hhA[2]
 	#hCG=c(hhA[2],hhT[2])
@@ -104,9 +115,9 @@ function(x,kbin=300, p=3,h=-1,W=1,nboot=100,kernel="gaussian",nh=30){
 			n_CG=N[2],
 			h=c(hAT,hCG),
 			etiquetas=as.character(etiquetas),
-			call=match.call()) 			
-		
+			call=match.call())
+
 		class(res) <- "change.points"
 		return(res)
-	
+
 }

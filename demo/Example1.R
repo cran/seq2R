@@ -17,9 +17,9 @@ seq1
 
 
 # Specifying the base pairs CG,
-#the estimates, their first derivative and 
+#the estimates, their first derivative and
 # 95% confidence intervals of the critical points
-par(mfrow=c(2,1))
+
 plot(seq1,der=0,base.pairs="CG",CIcritical=TRUE,ylim=c(0.08,0.67))
 plot(seq1,der=1,base.pairs="CG",CIcritical=TRUE,ylim=c(-0.0005,0.00045))
 abline(h=0)
@@ -29,9 +29,9 @@ critical(seq1,base.pairs="CG")
 
 
 # Specifying the base pairs AT,
-#the estimates, their first derivative and 
+#the estimates, their first derivative and
 # 95% confidence intervals of the critical points
-par(mfrow=c(2,1))
+
 plot(seq1,der=0,base.pairs="AT",CIcritical=TRUE)
 plot(seq1,der=1,base.pairs="AT",CIcritical=TRUE)
 abline(h=0)

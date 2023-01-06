@@ -16,9 +16,9 @@ seq2<-change.points(nem,kbin=450,nh=10)
 seq2
 
 # Specifying the base pairs AT,
-#the estimates, their first derivative and 
+#the estimates, their first derivative and
 # 95% confidence intervals of the critical points
-par(mfrow=c(2,1))
+
 plot(seq2,der=0,base.pairs="AT",CIcritical=TRUE)
 plot(seq2,der=1,base.pairs="AT",CIcritical=TRUE,ylim=c(-0.0002,0.0002))
 abline(h=0)

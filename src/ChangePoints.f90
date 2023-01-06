@@ -1,24 +1,21 @@
-subroutine fonseca(n,hA,hT,p,A,T,X,W,Xb,AT,ATi,ATs,AT1,AT1i,AT1s,&
-critical,criticali,criticals,nboot,kbin,kernel,nh)
+subroutine changepoints_(n,hA,hT,p,A,T,X,W,Xb,AT,ATi,ATs,AT1,AT1i,AT1s,&
+critical,criticali,criticals,nboot,kbin,kernel,nh, umatrixA, umatrixT)
 
-!!DEC$ ATTRIBUTES DLLEXPORT:: fonseca
-!!DEC$ ATTRIBUTES C, REFERENCE, ALIAS:'fonseca_' :: fonseca
+!!DEC$ ATTRIBUTES DLLEXPORT:: change.points
+!!DEC$ ATTRIBUTES C, REFERENCE, ALIAS:'changepoints_' :: change.points
 
 implicit none
-integer*4 iend,i,ifold,p,iboot,j,icont,imin,imax,Xmin(200),&
-Xmax(200),nh,kernel,n,kbin,nboot,seed
-character*30 fichero
-character*50 salida
+integer(kind=4) i,p,iboot,j,icont,imin,imax,Xmin(200),&
+Xmax(200),nh,kernel,n,kbin,nboot
 
-double precision, allocatable:: Fold(:)
-double precision A(n),C(n),T(n),Y(n),G(n),X(n),W(n),hA,hT,Vaux(20000),Signi(5000),&
+double precision A(n),T(n),X(n),W(n),hA,hT,Signi(5000),&
 critical(kbin),vmax,criticalboot(kbin,nboot), &
 criticali(kbin),criticals(kbin),Ati(kbin),Ats(kbin),At1i(kbin),&
-At1s(kbin),xb(kbin),At(kbin),At1(kbin),marta(100)
+At1s(kbin),xb(kbin),At(kbin),At1(kbin), umatrixA(n, nboot),&
+umatrixT(n, nboot), VauxInt(n), VauxBoot(nboot), VauxKbin(kbin)
 double precision,allocatable::PbA(:,:),PbT(:,:),pred(:),predA(:),PredT(:),&
 Aboot(:),Tboot(:),Atboot(:,:),At1boot(:,:)
 double precision,external::Bernoulli
-real*4 u,rand
 
 
 
@@ -31,128 +28,128 @@ allocate(PbA(kbin,3),PbT(kbin,3),Atboot(kbin,nboot),At1boot(kbin,nboot))
 
 call GRID(X,W,n,Xb,kbin)
 call RFAST_H(X,A,W,n,hA,p,Xb,PbA,kbin,kernel,nh)
-hT=hA
+!hT=hA
 call RFAST_H(X,T,W,n,hT,p,Xb,PbT,kbin,kernel,nh)
 
 
 
+
+
+
 do i=1,kbin
-	AT(i)=(PbA(i,1)-PbT(i,1))/(PbA(i,1)+PbT(i,1))
+ AT(i)=(PbA(i,1)-PbT(i,1))/(PbA(i,1)+PbT(i,1))
 end do
 
-call Interpola (Xb,PbA(1,1),kbin,X,PredA,Vaux,n)
-call Interpola (Xb,PbT(1,1),kbin,X,PredT,Vaux,n)
-
-u=rand()
-if(u.lt.0.2) seed=100
-if(u.ge.0.2.and.u.lt.0.3) seed=200
-if(u.ge.0.3.and.u.lt.0.4) seed=300
-if(u.ge.0.4.and.u.lt.0.5) seed=401
-if(u.ge.0.5.and.u.lt.0.6) seed=501
-if(u.ge.0.6.and.u.lt.0.7) seed=600
-if(u.ge.0.7.and.u.lt.0.8) seed=700
-if(u.ge.0.8.and.u.lt.0.9) seed=800
-if(u.ge.0.9) seed=900
+call Interpola (Xb,PbA(1,1),kbin,X,PredA,VauxInt,n) ! Vaux
+call Interpola (Xb,PbT(1,1),kbin,X,PredT,VauxInt,n) ! Vaux
 
 
-call srand(seed)
+
+
 do iboot=1,nboot
-	do i=1,n
-		Aboot(i)=Bernoulli(predA(i))
-		Tboot(i)=Bernoulli(predT(i))	
-	end do
-	call RFAST_H(X,Aboot,W,n,hA,p,Xb,PbA,kbin,kernel,nh)
-	call RFAST_H(X,Tboot,W,n,hT,p,Xb,PbT,kbin,kernel,nh)
-	do i=1, kbin
-		ATboot(i,iboot)=(PbA(i,1)-PbT(i,1))/(PbA(i,1)+PbT(i,1))
-	end do
+ do i=1,n
+  Aboot(i)=Bernoulli(predA(i), umatrixA(i, iboot))
+  Tboot(i)=Bernoulli(predT(i), umatrixT(i, iboot))
+ end do
+ call RFAST_H(X,Aboot,W,n,hA,p,Xb,PbA,kbin,kernel,nh)
+ call RFAST_H(X,Tboot,W,n,hT,p,Xb,PbT,kbin,kernel,nh)
+ do i=1, kbin
+  ATboot(i,iboot)=(PbA(i,1)-PbT(i,1))/(PbA(i,1)+PbT(i,1))
+ end do
 end do
+
 
 do i=1,kbin
-	do j=1,nboot
-		Vaux(j)=Atboot(i,j)
-	end do
-    call IC(At(i),Vaux,nboot,ATi(i),Ats(i))
+ do j=1,nboot
+  VauxBoot(j)=Atboot(i,j) ! Vaux
+ end do
+ call IC(At(i),VauxBoot,nboot,ATi(i),Ats(i))
 end do
 
-call Interpola (Xb,At,kbin,Xb,Vaux,At1,kbin)
+
+
+
+call Interpola (Xb,At,kbin,Xb,VauxKbin,At1,kbin) !Vaux
 do iboot=1,nboot
-	do i=1,kbin
-		Vaux(i)=Atboot(i,iboot)
-	end do
-	call Interpola (Xb,Vaux,kbin,Xb,Vaux,At1boot(1,iboot),kbin)
+ do i=1,kbin
+  VauxKbin(i)=Atboot(i,iboot)
+ end do
+ call Interpola (Xb,VauxKbin,kbin,Xb,VauxKbin,At1boot(1,iboot),kbin)
 end do
 
 do i=1,kbin
-	do j=1,nboot
-		Vaux(j)=At1boot(i,j)
-	end do
-    call IC(At1(i),Vaux,nboot,AT1i(i),At1s(i))
+ do j=1,nboot
+  VauxBoot(j)=At1boot(i,j)
+ end do
+ call IC(At1(i),VauxBoot,nboot,AT1i(i),At1s(i))
 end do
 
 do i=1,kbin
-	if (At1i(i).gt.0.or.At1s(i).lt.0) then
-		Signi(i)=1
-	else
-		Signi(i)=0
-	end if
+ if (At1i(i).gt.0.or.At1s(i).lt.0) then
+  Signi(i)=1
+ else
+  Signi(i)=0
+ end if
 end do
 
 icont=0
 do i=2,kbin
-	if (Signi(i).eq.1.and.Signi(i-1).eq.0) then
-		icont=icont+1
-	    xmin(icont)=1
-		do j=i-1,1,-1 
-			if (Signi(j).eq.0) then
-				xmin(icont)=j
-				goto 11
-			end if
-		end do 
+ if (Signi(i).eq.1.and.Signi(i-1).eq.0) then
+  icont=icont+1
+  xmin(icont)=1
+  do j=i-1,1,-1
+   if (Signi(j).eq.0) then
+    xmin(icont)=j
+    goto 11
+   end if
+  end do
 11      continue
-		xmax(icont)=kbin
-		do j=i+1,kbin
-			if (Signi(j).eq.0) then
-				xmax(icont)=j
-				goto 12
-			end if
-		end do 
-12      continue	
-	end if
+xmax(icont)=kbin
+do j=i+1,kbin
+ if (Signi(j).eq.0) then
+  xmax(icont)=j
+  goto 12
+ end if
+end do
+12 continue
+end if
 end do
 
 do i=1,icont
-	vmax=-999
-	do j=xmin(i),xmax(i)
-		if (abs(at1(j)).gt.vmax) then
-			critical(i)=Xb(j)
-			vmax=abs(at1(j))
-		end if
-	end do
+ vmax=-999
+ do j=xmin(i),xmax(i)
+  if (abs(at1(j)).gt.vmax) then
+   critical(i)=Xb(j)
+   vmax=abs(at1(j))
+  end if
+ end do
 end do
 
 do i=1,icont
-	do iboot=1,nboot
-		vmax=-999
-		do j=xmin(i),xmax(i)
-			if (abs(at1boot(j,iboot)).gt.vmax) then
-				criticalboot(i,iboot)=Xb(j)
-				vmax=abs(at1boot(j,iboot))
-			end if
-		end do
-	end do
+ do iboot=1,nboot
+  vmax=-999
+   do j=xmin(i),xmax(i)
+    if (abs(at1boot(j,iboot)).gt.vmax) then
+     criticalboot(i,iboot)=Xb(j)
+     vmax=abs(at1boot(j,iboot))
+    end if
+   end do
+ end do
 end do
 
 do i=1,icont
-	do j=1,nboot
-		Vaux(j)=criticalboot(i,j)
-	end do
-	call IC(critical(i),Vaux,nboot,criticali(i),criticals(i))
-	imin=xmin(i)
-	imax=xmax(i)
-	criticali(i)=max(criticali(i),xb(imin))
-	criticals(i)=min(criticals(i),xb(imax))
+ do j=1,nboot
+  VauxBoot(j)=criticalboot(i,j)
+ end do
+ call IC(critical(i),VauxBoot,nboot,criticali(i),criticals(i))
+ imin=xmin(i)
+ imax=xmax(i)
+ criticali(i)=max(criticali(i),xb(imin))
+ criticals(i)=min(criticals(i),xb(imax))
 end do
+
+
+
 
 deallocate(PbT,At1boot,pred,PredT,Tboot) !atboot,aboot,predA,PbA,
 end
@@ -162,12 +159,25 @@ end
 
 
 
-double precision function Bernoulli(p)
-implicit none
-double precision p   
-REAL*4 u,rand
 
-u=RAND()
+
+
+
+
+
+
+
+
+
+
+
+
+double precision function Bernoulli(p, u)
+implicit none
+double precision p, u
+!REAL*8 u
+
+!u=RAND()
 
 Bernoulli=0
 if (u.le.p) Bernoulli=1
@@ -176,27 +186,26 @@ end
 
 integer function which_min(X,n)
 implicit none
-integer*4 n,i
+integer(kind=4) n,i
 double precision X(n),aux
 
 aux=X(1)
 which_min=1
 do i=2,n
-	if (X(i).le.aux) then
-		aux=X(i)
-		which_min=i
-	end if
+if (X(i).le.aux) then
+aux=X(i)
+which_min=i
+end if
 end do
 
 end
 
-
 subroutine IC(X0,X,nboot,li,ls)
 implicit none
-integer*4 nboot,nalfa,i
+integer(kind=4) nboot,nalfa,i
 double precision X0,X(nboot),Dif(nboot),li,ls,alfa(3),Q(3)
 do i=1,nboot
-	Dif(i)=X(i)-X0 
+Dif(i)=X(i)-X0
 end do
 
 alfa(1)=0.025
@@ -208,12 +217,12 @@ call quantile (Dif,nboot,alfa,nalfa,Q)
 
 li=x0-Q(3)+Q(2)
 ls=x0-Q(1)+Q(2)
-end subroutine	
+end subroutine
 
 
 
 !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	MODULE lsq
+MODULE lsq
 
 !  Module for unconstrained linear least-squares calculations.
 !  The algorithm is suitable for updating LS calculations as more
@@ -301,8 +310,8 @@ end subroutine
 
 IMPLICIT NONE
 
-INTEGER*4, SAVE                :: nobs, ncol, r_dim
-INTEGER*4, ALLOCATABLE, SAVE   :: vorder(:), row_ptr(:)
+INTEGER(KIND=4), SAVE                :: nobs, ncol, r_dim
+INTEGER(KIND=4), ALLOCATABLE, SAVE   :: vorder(:), row_ptr(:)
 LOGICAL, SAVE                :: initialized = .false.,                  &
                                 tol_set = .false., rss_set = .false.
 
@@ -314,7 +323,7 @@ LOGICAL, SAVE                :: initialized = .false.,                  &
 !       precision', and other systems with larger word lengths which will
 !       give similar accuracy in `single precision'.
 
-INTEGER*4, PARAMETER           :: dp = SELECTED_REAL_KIND(12,60)
+INTEGER(KIND=4), PARAMETER           :: dp = SELECTED_REAL_KIND(12,60)
 double precision, ALLOCATABLE, SAVE :: d(:), rhs(:), r(:), tol(:), rss(:)
 double precision, SAVE              :: zero = 0.0_dp, one = 1.0_dp, vsmall
 double precision, SAVE              :: sserr, toly
@@ -337,11 +346,11 @@ SUBROUTINE startup(nvar, fit_const)
 !--------------------------------------------------------------------------
 
 IMPLICIT NONE
-INTEGER*4, INTENT(IN)  :: nvar
+INTEGER(KIND=4), INTENT(IN)  :: nvar
 LOGICAL, INTENT(IN)  :: fit_const
 
 !     Local variable
-INTEGER*4   :: i
+INTEGER(KIND=4)   :: i
 
 vsmall = 10. * TINY(zero)
 
@@ -411,7 +420,7 @@ double precision, DIMENSION(:), INTENT(IN OUT) :: xrow
 
 !     Local variables
 
-INTEGER*4     :: i, k, nextr
+INTEGER(KIND=4)     :: i, k, nextr
 double precision   :: w, y, xi, di, wxi, dpi, cbar, sbar, xk
 
 nobs = nobs + 1
@@ -469,13 +478,13 @@ SUBROUTINE regcf(beta, nreq, ifault)
 !--------------------------------------------------------------------------
 
 IMPLICIT NONE
-INTEGER*4, INTENT(IN)                  :: nreq
-INTEGER*4, INTENT(OUT)                 :: ifault
+INTEGER(KIND=4), INTENT(IN)                  :: nreq
+INTEGER(KIND=4), INTENT(OUT)                 :: ifault
 double precision, DIMENSION(:), INTENT(OUT) :: beta
 
 !     Local variables
 
-INTEGER*4   :: i, j, nextr
+INTEGER(KIND=4)   :: i, j, nextr
 
 !     Some checks.
 
@@ -535,7 +544,7 @@ double precision, INTENT(IN), OPTIONAL :: eps
 
 !     Local variables
 
-INTEGER*4    :: col, row, pos
+INTEGER(KIND=4)    :: col, row, pos
 double precision  :: eps1, ten = 10.0, total, work(ncol)
 
 !     EPS is a machine-dependent constant.
@@ -583,13 +592,13 @@ SUBROUTINE sing(lindep, ifault)
 !
 !--------------------------------------------------------------------------
 
-INTEGER*4, INTENT(OUT)                :: ifault
+INTEGER(KIND=4), INTENT(OUT)                :: ifault
 LOGICAL, DIMENSION(:), INTENT(OUT)  :: lindep
 
 !     Local variables
 
 double precision  :: temp, x(ncol), work(ncol), y, weight
-INTEGER*4    :: pos, row, pos2
+INTEGER(KIND=4)    :: pos, row, pos2
 
 ifault = 0
 
@@ -643,7 +652,7 @@ SUBROUTINE ss()
 
 !     Local variables
 
-INTEGER*4    :: i
+INTEGER(KIND=4)    :: i
 double precision  :: total
 
 total = sserr
@@ -671,14 +680,14 @@ SUBROUTINE cov(nreq, var, covmat, dimcov, sterr, ifault)
 !
 !--------------------------------------------------------------------------
 
-INTEGER*4, INTENT(IN)                   :: nreq, dimcov
-INTEGER*4, INTENT(OUT)                  :: ifault
+INTEGER(KIND=4), INTENT(IN)                   :: nreq, dimcov
+INTEGER(KIND=4), INTENT(OUT)                  :: ifault
 double precision, INTENT(OUT)                :: var
 double precision, DIMENSION(:), INTENT(OUT)  :: covmat, sterr
 
 !     Local variables.
 
-INTEGER*4                :: dim_rinv, pos, row, start, pos2, col, pos1, k
+INTEGER(KIND=4)                :: dim_rinv, pos, row, start, pos2, col, pos1, k
 double precision              :: total
 double precision, ALLOCATABLE :: rinv(:)
 
@@ -749,12 +758,12 @@ SUBROUTINE inv(nreq, rinv)
 !
 !--------------------------------------------------------------------------
 
-INTEGER*4, INTENT(IN)                  :: nreq
+INTEGER(KIND=4), INTENT(IN)                  :: nreq
 double precision, DIMENSION(:), INTENT(OUT) :: rinv
 
 !     Local variables.
 
-INTEGER*4    :: pos, row, col, start, k, pos1, pos2
+INTEGER(KIND=4)    :: pos, row, col, start, k, pos1, pos2
 double precision  :: total
 
 !     Invert R ignoring row multipliers, from the bottom up.
@@ -805,13 +814,13 @@ SUBROUTINE partial_corr(in, cormat, dimc, ycorr, ifault)
 !
 !--------------------------------------------------------------------------
 
-INTEGER*4, INTENT(IN)                  :: in, dimc
-INTEGER*4, INTENT(OUT)                 :: ifault
+INTEGER(KIND=4), INTENT(IN)                  :: in, dimc
+INTEGER(KIND=4), INTENT(OUT)                 :: ifault
 double precision, DIMENSION(:), INTENT(OUT) :: cormat, ycorr
 
 !     Local variables.
 
-INTEGER*4    :: base_pos, pos, row, col, col1, col2, pos1, pos2
+INTEGER(KIND=4)    :: base_pos, pos, row, col, col1, col2, pos1, pos2
 double precision  :: rms(in+1:ncol), sumxx, sumxy, sumyy, work(in+1:ncol)
 
 !     Some checks.
@@ -901,13 +910,13 @@ SUBROUTINE vmove(from, to, ifault)
 !
 !--------------------------------------------------------------------------
 
-INTEGER*4, INTENT(IN)    :: from, to
-INTEGER*4, INTENT(OUT)   :: ifault
+INTEGER(KIND=4), INTENT(IN)    :: from, to
+INTEGER(KIND=4), INTENT(OUT)   :: ifault
 
 !     Local variables
 
 double precision  :: d1, d2, x, d1new, d2new, cbar, sbar, y
-INTEGER*4    :: m, first, last, inc, m1, m2, mp1, col, pos, row
+INTEGER(KIND=4)    :: m, first, last, inc, m1, m2, mp1, col, pos, row
 
 !     Check input parameters
 
@@ -1030,13 +1039,13 @@ SUBROUTINE reordr(list, n, pos1, ifault)
 !
 !--------------------------------------------------------------------------
 
-INTEGER*4, INTENT(IN)               :: n, pos1
-INTEGER*4, DIMENSION(:), INTENT(IN) :: list
-INTEGER*4, INTENT(OUT)              :: ifault
+INTEGER(KIND=4), INTENT(IN)               :: n, pos1
+INTEGER(KIND=4), DIMENSION(:), INTENT(IN) :: list
+INTEGER(KIND=4), INTENT(OUT)              :: ifault
 
 !     Local variables.
 
-INTEGER*4    :: next, i, l, j
+INTEGER(KIND=4)    :: next, i, l, j
 
 !     Check N.
 
@@ -1087,14 +1096,14 @@ SUBROUTINE hdiag(xrow, nreq, hii, ifault)
 ! row (xrow).   The variance of the i-th least-squares residual is (1 - hii).
 !--------------------------------------------------------------------------
 
-INTEGER*4, INTENT(IN)                  :: nreq
-INTEGER*4, INTENT(OUT)                 :: ifault
+INTEGER(KIND=4), INTENT(IN)                  :: nreq
+INTEGER(KIND=4), INTENT(OUT)                 :: ifault
 double precision, DIMENSION(:), INTENT(IN)  :: xrow
 double precision, INTENT(OUT)               :: hii
 
 !     Local variables
 
-INTEGER*4    :: col, row, pos
+INTEGER(KIND=4)    :: col, row, pos
 double precision  :: total, wk(ncol)
 
 !     Some checks
@@ -1133,13 +1142,13 @@ FUNCTION varprd(x, nreq) RESULT(fn_val)
 !
 !--------------------------------------------------------------------------
 
-INTEGER*4, INTENT(IN)                  :: nreq
+INTEGER(KIND=4), INTENT(IN)                  :: nreq
 double precision, DIMENSION(:), INTENT(IN)  :: x
 double precision                            :: fn_val
 
 !     Local variables
 
-INTEGER*4    :: ifault, row
+INTEGER(KIND=4)    :: ifault, row
 double precision  :: var, wk(nreq)
 
 !     Check input parameter values
@@ -1179,13 +1188,13 @@ SUBROUTINE bksub2(x, b, nreq)
 !
 !--------------------------------------------------------------------------
 
-INTEGER*4, INTENT(IN)                  :: nreq
+INTEGER(KIND=4), INTENT(IN)                  :: nreq
 double precision, DIMENSION(:), INTENT(IN)  :: x
 double precision, DIMENSION(:), INTENT(OUT) :: b
 
 !     Local variables
 
-INTEGER*4    :: pos, row, col
+INTEGER(KIND=4)    :: pos, row, col
 double precision  :: temp
 
 !     Solve by back-substitution, starting from the top.
@@ -1211,16 +1220,16 @@ END MODULE lsq
 
 
 
-!%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%	
+!%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 !	WREGRESION
 !*******************************************************
 subroutine WRegresion(X,Y,W,n,nvar,beta,sterr,se,r2,iopt)
 USE lsq
 IMPLICIT NONE
-INTEGER*4             :: i, ier, iostatus, j, m, n,nvar,iopt
-double precision          :: x(n,nvar), y(n),W(n), xrow(0:nvar+1), wt = 1.0_dp, beta(0:nvar+1),var, &
+INTEGER(KIND=4)             :: i, ier, j, m, n,nvar,iopt
+double precision          :: x(n,nvar), y(n),W(n), xrow(0:nvar+1), beta(0:nvar+1),var, &
 covmat(231), sterr(0:nvar+1), totalSS,se,r2
-LOGICAL             :: fit_const = .TRUE., lindep(0:20), xfirst
+LOGICAL             :: fit_const = .TRUE., lindep(0:20)
 
 
 
@@ -1279,60 +1288,57 @@ totalSS = rss(1)
 r2=(totalSS - rss(m+1))/totalSS
 
 end if
-END 
+END
 
 
 subroutine quantile (X,n,alfa,nalfa,Q)
 implicit none
-integer*4 n,nalfa,ip,j,ind(n)
+INTEGER(KIND=4) n,nalfa,ip,j,ind(n)
 double precision X(n),alfa(nalfa),Q(nalfa),R,xest
 call qsortd(x,ind,n)
-	
-	do j=1,nalfa
-		IP=alfa(j)*(n+1.)
-		XEST=alfa(j)*(n+1.)
-		IF(ip .lt. 1) then
-			Q(j)=X(ind(1))
-		elseif (ip.ge.n) then
-			Q(j)=X(ind(n))
-		else
-			R=alfa(j)*(n+1.)-IP
-			Q(j)=(1.-R)*X(ind(IP)) + R*X(ind(IP+1))
-		end if
-      end do
-end
 
+do j=1,nalfa
+IP=int(alfa(j)*(n+1.))
+XEST=alfa(j)*(n+1.)
+IF(ip .lt. 1) then
+Q(j)=X(ind(1))
+elseif (ip.ge.n) then
+Q(j)=X(ind(n))
+else
+  R=alfa(j)*(n+1.)-IP
+Q(j)=(1.-R)*X(ind(IP)) + R*X(ind(IP+1))
+end if
+end do
+end
 
 double precision function Cuant (X,n,alfa)
 implicit none
-integer*4 n,nalfa,ip,j,ind(n)
+INTEGER(KIND=4) n,ip,ind(n)
 double precision X(n),alfa,Q,R,xest
 call qsortd(x,ind,n)
-IP=alfa*(n+1.)
+IP=int(alfa*(n+1.))
 XEST=alfa*(n+1.)
 IF(ip .lt. 1) then
-	Q=X(ind(1))
+Q=X(ind(1))
 elseif (ip.ge.n) then
-	Q=X(ind(n))
+Q=X(ind(n))
 else
-	R=alfa*(n+1.)-IP
-	Q=(1.-R)*X(ind(IP)) + R*X(ind(IP+1))
+  R=alfa*(n+1.)-IP
+Q=(1.-R)*X(ind(IP)) + R*X(ind(IP+1))
 end if
 Cuant=Q
 end
 
 
-
-!%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%		
+!%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 !  Subroutine RFAST_H
 !*********************************************************
-subroutine rfast_h(X,Y,W,n,h,p,Xb,Pb,kbin,kernel,nh)
+  subroutine rfast_h(X,Y,W,n,h,p,Xb,Pb,kbin,kernel,nh)
 implicit none
-integer*4 n,i,j,kbin,p,ifcv,icont,ih,ih0,i0,nh,kernel
+INTEGER(KIND=4) n,i,j,kbin,p,nh,kernel
 double precision x(n),y(n),W(n),Xb(kbin),Yb(kbin),Wb(kbin),&
-alfa,q1,q2,q3,d1,xmin,xmax,Area(2),dis1,dis2,X2(kbin),&
-W2(kbin),Pb(kbin,3),h,ErrCV,erropt,sumw,med,&
-meany,vary,dif,rango,hmin,hmax,beta(10),xbb(kbin),pred(8)
+  Pb(kbin,3),h,&
+ rango,hmin,hmax,beta(10),xbb(kbin),pred(8)
 double precision, allocatable::ls(:,:),li(:,:)
 
 allocate(Li(kbin,3),Ls(kbin,3))
@@ -1344,38 +1350,38 @@ hmin= 0
 hmax=1
 
 if (h.eq.-1)  then
-	call Ventana1D(Xb,Yb,Wb,kbin,h,p,hmin,hmax,nh,rango,kernel)
-  end if
-  
+call Ventana1D(Xb,Yb,Wb,kbin,h,p,hmin,hmax,nh,rango,kernel)
+end if
+
 if(h.eq.0) then
-	call Reglineal (Xb,Yb,Wb,kbin,p,Beta)
-	do i=1,kbin
-		Pb(i,1)=beta(1)
-		Pb(i,2)=0
-		do j=1,p
-			pb(i,1)=pb(i,1)+beta(j+1)*Xb(i)**j
-			pb(i,2)=pb(i,2)+p*beta(j+1)*Xb(i)**(j-1)
-		end do
-	end do
-	goto 1
+call Reglineal (Xb,Yb,Wb,kbin,p,Beta)
+do i=1,kbin
+Pb(i,1)=beta(1)
+Pb(i,2)=0
+do j=1,p
+pb(i,1)=pb(i,1)+beta(j+1)*Xb(i)**j
+pb(i,2)=pb(i,2)+p*beta(j+1)*Xb(i)**(j-1)
+end do
+end do
+goto 1
 end if
 
 if (h.eq.-2) then
-	Pb=0
-	goto 1
+Pb=0
+goto 1
 end if
 
 xbb=xb
 
 do i=1,kbin
-	call Reg1D(Xb,Yb,Wb,kbin,h,p,xbb(i),pred,rango,kernel,0)
-	pb(i,1)=pred(1)
-	pb(i,2)=pred(2)
-	pb(i,3)=pred(3)
+call Reg1D(Xb,Yb,Wb,kbin,h,p,xbb(i),pred,rango,kernel,0)
+pb(i,1)=pred(1)
+pb(i,2)=pred(2)
+pb(i,3)=pred(3)
 end do
 
 
-1	continue
+1 continue
 end subroutine
 
 
@@ -1385,41 +1391,41 @@ end subroutine
 !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 !	BINNING LINEAL
 !***************************************************
-subroutine Binning(X,Y,n,W,Xb,Yb,Wb,kbin)
+  subroutine Binning(X,Y,n,W,Xb,Yb,Wb,kbin)
 implicit none
-integer*4 n,i,j,kbin
+INTEGER(KIND=4) n,i,j,kbin
 double precision x(n),y(n),W(n),Xb(kbin),Yb(kbin),Wb(kbin),&
-d1,Area(2),dis1,dis2
+  Area(2),dis1,dis2
 
-	Wb=0
-	Yb=0
-	do i=1,n	
-		if (W(i).gt.0) then
-			if (X(i).lt.Xb(1)) then
-				Wb(1)=wb(1)+W(i)
-				yb(1)=yb(1)+W(i)*Y(i)
-			elseif (X(i).gt.Xb(kbin)) then
-				Wb(kbin)=wb(kbin)+W(i)
-				yb(kbin)=yb(kbin)+W(i)*Y(i)
-			else
-				do j=1,kbin-1
-					if (Xb(j).le.X(i).and.X(i).le.Xb(j+1)) then
-						dis1=X(i)-Xb(j)
-						dis2=Xb(j+1)-X(i)
-						Area(1)=dis2/(dis1+dis2)
-						Area(2)=dis1/(dis1+dis2)
-						Wb(j)=Wb(j)+W(i)*Area(1)
-						Yb(j)=Yb(j)+Y(i)*W(i)*Area(1)
-						Wb(j+1)=Wb(j+1)+W(i)*Area(2)
-						Yb(j+1)=Yb(j+1)+Y(i)*W(i)*Area(2)
-					end if
-				end do
-			end if
-		end if
-	end do
-	do i=1,kbin
-		if (Wb(i).gt.0) Yb(i)=Yb(i)/Wb(i)
-	end do
+Wb=0
+Yb=0
+do i=1,n
+if (W(i).gt.0) then
+if (X(i).lt.Xb(1)) then
+Wb(1)=wb(1)+W(i)
+yb(1)=yb(1)+W(i)*Y(i)
+elseif (X(i).gt.Xb(kbin)) then
+Wb(kbin)=wb(kbin)+W(i)
+yb(kbin)=yb(kbin)+W(i)*Y(i)
+else
+  do j=1,kbin-1
+if (Xb(j).le.X(i).and.X(i).le.Xb(j+1)) then
+dis1=X(i)-Xb(j)
+dis2=Xb(j+1)-X(i)
+Area(1)=dis2/(dis1+dis2)
+Area(2)=dis1/(dis1+dis2)
+Wb(j)=Wb(j)+W(i)*Area(1)
+Yb(j)=Yb(j)+Y(i)*W(i)*Area(1)
+Wb(j+1)=Wb(j+1)+W(i)*Area(2)
+Yb(j+1)=Yb(j+1)+Y(i)*W(i)*Area(2)
+end if
+end do
+end if
+end if
+end do
+do i=1,kbin
+if (Wb(i).gt.0) Yb(i)=Yb(i)/Wb(i)
+end do
 end subroutine
 
 
@@ -1428,39 +1434,39 @@ end subroutine
 
 
 !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-!	VENTANA1D
+  !	VENTANA1D
 !**********************************************************
-subroutine Ventana1D(X,Y,W,n,h,p,hmin,hmax,nh,rango,kernel)
+  subroutine Ventana1D(X,Y,W,n,h,p,hmin,hmax,nh,rango,kernel)
 implicit none
-integer*4 i,j,k,icont,p,iopt,ier,n,ih,istep,nh,ih2,i2,Err(nh),kernel
-double precision x(n),x2(n),Y(n),h,tanh,waux,Beta(10),Sterr(20),Ventana(n),hmin,hmax,&
-se(20),r2,pred(8),B(3),W(n),x0,hgrid(nh),ErrH(5000),sumW,rango,Erraux(nh),&
-WW(n),Ventana2(n),medaux,VT,sumy,sumy2,maxr2,minr2,angulo
+INTEGER(KIND=4) i,p,n,ih,nh,ih2,Err(nh),kernel
+double precision x(n),x2(n),Y(n),h,hmin,hmax,&
+  pred(8),W(n),hgrid(nh),ErrH(5000),sumW,rango,&
+  VT,sumy,sumy2,maxr2,minr2
 double precision,allocatable::ErrCV(:,:),Predh(:,:),WCV(:)
-integer*4,external::which_min
+INTEGER(KIND=4),external::which_min
 allocate(ErrCV(n,nh),Predh(n,nh),WCV(n))
 
 do ih=1,nh
-	hgrid(ih)=hmin+(ih-1)*(hmax-hmin)/(nh-1)
+hgrid(ih)=hmin+(ih-1)*(hmax-hmin)/(nh-1)
 end do
 
 Err=0
-do ih=nh,1,-1 
-	do i=1,n
-		WCV=W
-		if(i.ne.1) WCV(i-1)=0
-		WCV(i)=0
-		if(i.ne.n) WCV(i+1)=0
-		x2(i)=x(i)
-		call Reg1D(X,Y,WCV,n,hgrid(ih),p,X2(i),pred,rango,kernel,1)
-		PredH(i,ih)=pred(1)
-		if (pred(1).eq.-1.0) then
-			do ih2=ih,1,-1 
-				Err(ih2)=1
-			end do
-			goto 3333
-		end if
-	end do		
+do ih=nh,1,-1
+do i=1,n
+WCV=W
+if(i.ne.1) WCV(i-1)=0
+WCV(i)=0
+if(i.ne.n) WCV(i+1)=0
+x2(i)=x(i)
+call Reg1D(X,Y,WCV,n,hgrid(ih),p,X2(i),pred,rango,kernel,1)
+PredH(i,ih)=pred(1)
+if (pred(1).eq.-1.0) then
+do ih2=ih,1,-1
+Err(ih2)=1
+end do
+goto 3333
+end if
+end do
 end do
 
 3333 continue
@@ -1470,15 +1476,15 @@ ErrH=9e9
 
 
 do ih=1,nh
-	if (Err(ih).eq.0) then
-		sumw=0
-		ErrH(ih)=0
-		do i=1,n
-			sumw=sumw+W(i)	
-			ErrH(ih)=ErrH(ih)+W(i)*(Y(i)-PredH(i,ih))**2
-		end do
-		ErrH(ih)=ErrH(ih)/sumw	
-	end if
+if (Err(ih).eq.0) then
+sumw=0
+ErrH(ih)=0
+do i=1,n
+sumw=sumw+W(i)
+ErrH(ih)=ErrH(ih)+W(i)*(Y(i)-PredH(i,ih))**2
+end do
+ErrH(ih)=ErrH(ih)/sumw
+end if
 end do
 
 
@@ -1487,42 +1493,43 @@ h= hgrid(ih)
 
 sumy=0
 sumy2=0
+sumw=0
 do i=1,n
-	sumw=sumw+W(i)	
-	sumy=sumy+W(i)*Y(i)
-	sumy2=sumy2+W(i)*Y(i)**2
+sumw=sumw+W(i)
+sumy=sumy+W(i)*Y(i)
+sumy2=sumy2+W(i)*Y(i)**2
 end do
 
 vt=(sumy2/sumw)-(sumy/sumw)**2
 
 
 do i=1,nh
-	if (errh(i).ne.9e9) then
-		 Errh(i)=(vT-ErrH(i))/Vt 
-	else
-		Errh(i)=0
-	end if
+if (errh(i).ne.9e9) then
+Errh(i)=(vT-ErrH(i))/Vt
+else
+  Errh(i)=0
+end if
 end do
 
 minr2=9e9
 maxr2=-minr2
 do i=1,nh
-	if (Errh(i).gt.0)	then
-		minr2=min(Errh(i),minr2)
-		maxr2=max(Errh(i),maxr2)
-	end if
+if (Errh(i).gt.0) then
+minr2=min(Errh(i),minr2)
+maxr2=max(Errh(i),maxr2)
+end if
 end do
 
-11 continue
+!11 continue
 
 do i=ih,nh
-	if (Errh(i)+((maxr2-minr2)*0.1).ge.Errh(ih)) then 
-		h=hgrid(i)
-	end if
+if (Errh(i)+((maxr2-minr2)*0.5).ge.Errh(ih)) then
+h=hgrid(i)
+end if
 end do
 
 
-33 continue
+!33 continue
 
 deallocate(ErrCV,Predh,WCV)
 end subroutine
@@ -1533,106 +1540,105 @@ end subroutine
 
 
 !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-!  Subroutine  REG1D
+  !  Subroutine  REG1D
 !****************************************************
-subroutine Reg1D(X,Y,W,n,h,p,x0,pred,rango,kernel,ifcv)
-implicit none 
-integer*4 i,j,k,icont,p,iopt,ier,n,kernel,ifcv
-double precision x(n),Y(n),Z(n),h,tanh,waux,Beta(10),Sterr(20),se,r2,&
-pred(8),B(3),W(n),x0,rango,h2,u,pred2
+  subroutine Reg1D(X,Y,W,n,h,p,x0,pred,rango,kernel,ifcv)
+implicit none
+INTEGER(KIND=4) i,j,icont,p,iopt,ier,n,kernel,ifcv
+double precision x(n),Y(n),h,waux,Beta(10),Sterr(20),se,r2,&
+  pred(8),W(n),x0,rango,h2,u,pred2
 double precision,allocatable::Vx(:),Vy(:),WW(:),XX(:,:)
-real*4 :: pi=3.1415927
 allocate(Vx(n),Vy(n),WW(n))
-      
+
 pred=-1
 
 h2=h
-345 continue
-    
-if (h2.gt.0) then 
-3		continue	
-		icont=0	
-		do i=1,n
-			u=((X(i)-x0)/rango) /h2 
-			if (W(i).gt.0) then	
-				
-				if(ifcv.eq.1.and.u.eq.0) then
-					waux=0
-				else
-					if(kernel.eq.1.and.abs(u).le.1) then
-						waux=W(i) * ( (0.75* (1-(u**2))))
-					elseif(kernel.eq.2.and.abs(u).le.1) then
-						waux= W(i) * (1-(abs(u)))
-					elseif(kernel.eq.3) then
-						waux=W(i)*( (1/sqrt(2*3.1415927)) * dexp( -0.5*(u**2) ) ) 
-					else 
-						waux=W(i)*0.0
-					end if
-				end if
+!345 continue
+
+if (h2.gt.0) then
+!3 continue
+icont=0
+do i=1,n
+u=((X(i)-x0)/rango) /h2
+if (W(i).gt.0) then
+
+if(ifcv.eq.1.and.u.eq.0) then
+waux=0
+else
+  if(kernel.eq.1.and.abs(u).le.1) then
+waux=W(i) * ( (0.75* (1-(u**2))))
+elseif(kernel.eq.2.and.abs(u).le.1) then
+waux= W(i) * (1-(abs(u)))
+elseif(kernel.eq.3) then
+waux=W(i)*( (1/sqrt(2*3.1415927)) * dexp( -0.5*(u**2) ) )
+else
+  waux=W(i)*0.0
+end if
+end if
 
 
 
-				if (waux.gt.0) then
-					icont=icont+1
-					Vx(icont)=X(i)-x0
-					Vy(icont)=Y(i)
-					WW(icont)=waux
-				end if
-			end if
-		end do
-	
-		if (icont.gt.6) then
-			allocate (XX(icont,4))	
-			do i=1,icont
-				do j=1,p
-					XX(i,j)=Vx(i)**j
-				end do
-			end do
-			iopt=1
-			call WRegresion_Javier(XX,Vy,WW,icont,p,beta,sterr,se,r2,iopt,ier)
-			pred(1)=beta(1)
-			pred(2)=beta(2)
-			pred(3)=beta(3)
-			pred(4)=sterr(1)
-			pred(5)=sterr(2)
-			pred(6)=sterr(3)
-			pred(7)=r2
-			pred(8)=ier
-			deallocate(XX)
-			if (ier.ne.0)  then
-			   pred=-1
-				goto 445
-			end if
-		else
-			pred=-1
-			goto 445
-		end if
-	else
-	continue
-	end if
-	
-	
-	445 continue
-	deallocate(Vx,Vy,WW)
+if (waux.gt.0) then
+icont=icont+1
+Vx(icont)=X(i)-x0
+Vy(icont)=Y(i)
+WW(icont)=waux
+end if
+end if
+end do
+
+if (icont.gt.6) then
+allocate (XX(icont,4))
+do i=1,icont
+do j=1,p
+XX(i,j)=Vx(i)**j
+end do
+end do
+iopt=1
+call WRegresion_Javier(XX,Vy,WW,icont,p,beta,sterr,se,r2,iopt,ier)
+pred(1)=beta(1)
+pred(2)=beta(2)
+pred(3)=beta(3)
+pred(4)=sterr(1)
+pred(5)=sterr(2)
+pred(6)=sterr(3)
+pred(7)=r2
+pred(8)=ier
+deallocate(XX)
+if (ier.ne.0)  then
+pred=-1
+goto 445
+end if
+else
+  pred=-1
+goto 445
+end if
+else
+  continue
+end if
+
+
+445 continue
+deallocate(Vx,Vy,WW)
 pred2=pred(2)
 end subroutine
 
-!%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%		
-!		REGRESION LINEAL
+!%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  !		REGRESION LINEAL
 !***************************************************
-subroutine Reglineal (X,Y,W,n,p,Beta)
+  subroutine Reglineal (X,Y,W,n,p,Beta)
 implicit none
-integer*4 i,n,j,p,iopt
-double precision X(n),Y(n),W(n),Pred(n),beta(p+1),&
-sterr(p+1),se,r2,X2(n,p+1)
+INTEGER(KIND=4) i,n,j,p,iopt
+double precision X(n),Y(n),W(n),beta(p+1),&
+  sterr(p+1),se,r2,X2(n,p+1)
 
 do i=1,n
-	do j=1,p
-		X2(i,j)=X(i)**j
-	end do
+do j=1,p
+X2(i,j)=X(i)**j
 end do
-	iopt=0
-	call WRegresion(X2,Y,W,n,p,beta,sterr,se,r2,iopt)
+end do
+iopt=0
+call WRegresion(X2,Y,W,n,p,beta,sterr,se,r2,iopt)
 
 
 end subroutine
@@ -1640,22 +1646,22 @@ end subroutine
 
 
 !***************************************************
-!			WREGRESION_Javier  (ier)
+  !			WREGRESION_Javier  (ier)
 !***************************************************
-subroutine WRegresion_Javier(X,Y,W,n,nvar,beta,sterr,se,r2,iopt,ier)
+  subroutine WRegresion_Javier(X,Y,W,n,nvar,beta,sterr,se,r2,iopt,ier)
 USE lsq
 
 IMPLICIT NONE
 
-INTEGER*4             :: i, ier, iostatus, j, m, n,nvar,iopt
+INTEGER(KIND=4)             :: i, ier, j, m, n,nvar,iopt
 
 double precision          :: x(n,nvar), y(n),W(n), xrow(0:nvar+1),&
 
- wt = 1.0_dp, beta(0:nvar+1),var, covmat(231), sterr(0:nvar+1), &
+beta(0:nvar+1),var, covmat(231), sterr(0:nvar+1), &
 
- totalSS,se,r2
+  totalSS,se,r2
 
-LOGICAL             :: fit_const = .TRUE., lindep(0:20), xfirst
+LOGICAL             :: fit_const = .TRUE., lindep(0:20)
 
 ! Least-squares calculations
 
@@ -1665,15 +1671,15 @@ CALL startup(m, fit_const)
 
 DO i = 1, n
 
-  xrow(0) = 1.0_dp
+xrow(0) = 1.0_dp
 
-  DO j = 1, m
+DO j = 1, m
 
-    xrow(j) = x(i,j)
+xrow(j) = x(i,j)
 
-  END DO
+END DO
 
-  CALL includ(W(i), xrow, y(i))
+CALL includ(W(i), xrow, y(i))
 
 END DO
 
@@ -1687,13 +1693,13 @@ CALL sing(lindep, ier)
 
 IF (ier /= 0) THEN
 
-  DO i = 0, m
+DO i = 0, m
 
-!    IF (lindep(i)) WRITE(*, '(a, i3)') ' Singularity detected for power: ', i 
+!    IF (lindep(i)) WRITE(*, '(a, i3)') ' Singularity detected for power: ', i
 
 !    IF (lindep(i)) WRITE(9, '(a, i3)') ' Singularity detected for power: ', i
 
-  END DO
+END DO
 
 END IF
 
@@ -1735,11 +1741,11 @@ DO i = 0, m
 
 !  WRITE(*, '(i4, g20.12, "   ", g14.6, "   ", g14.6)')  &
 
-!        i, beta(i), sterr(i), rss(i+1)
+  !        i, beta(i), sterr(i), rss(i+1)
 
 !  WRITE(9, '(i4, g20.12, "   ", g14.6, "   ", g14.6)')  &
 
-!        i, beta(i), sterr(i), rss(i+1)
+  !        i, beta(i), sterr(i), rss(i+1)
 
 END DO
 
@@ -1767,7 +1773,7 @@ r2=(totalSS - rss(m+1))/totalSS
 
 end if
 
-END 
+END
 
 
 
@@ -1776,21 +1782,21 @@ END
 
 
 !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-SUBROUTINE qsortd(x,ind,n)
- 
+  SUBROUTINE qsortd(x,ind,n)
+
 ! Code converted using TO_F90 by Alan Miller
 ! Date: 2002-12-18  Time: 11:55:47
 
 IMPLICIT NONE
-INTEGER*4, PARAMETER  :: dp = SELECTED_REAL_KIND(12, 60)
-integer*4 n,ind(n)
+INTEGER(KIND=4), PARAMETER  :: dp = SELECTED_REAL_KIND(12, 60)
+INTEGER(KIND=4) n,ind(n)
 double precision x(n)
 
 
 
 !***************************************************************************
 
-!                                                         ROBERT RENKA
+  !                                                         ROBERT RENKA
 !                                                 OAK RIDGE NATL. LAB.
 
 !   THIS SUBROUTINE USES AN ORDER N*LOG(N) QUICK SORT TO SORT A double precision
@@ -1821,18 +1827,18 @@ double precision x(n)
 
 !*********************************************************************
 
-! NOTE -- IU AND IL MUST BE DIMENSIONED >= LOG(N) WHERE LOG HAS BASE 2.
+  ! NOTE -- IU AND IL MUST BE DIMENSIONED >= LOG(N) WHERE LOG HAS BASE 2.
 
 !*********************************************************************
 
-INTEGER*4   :: iu(21), il(21)
-INTEGER*4   :: m, i, j, k, l, ij, it, itt, indx
+  INTEGER(KIND=4)   :: iu(21), il(21)
+INTEGER(KIND=4)   :: m, i, j, k, l, ij, it, itt, indx
 double precision     :: r
 double precision :: t
 
 ! LOCAL PARAMETERS -
 
-! IU,IL =  TEMPORARY STORAGE FOR THE UPPER AND LOWER
+  ! IU,IL =  TEMPORARY STORAGE FOR THE UPPER AND LOWER
 !            INDICES OF PORTIONS OF THE ARRAY X
 ! M =      INDEX FOR IU AND IL
 ! I,J =    LOWER AND UPPER INDICES OF A PORTION OF X
@@ -1848,7 +1854,7 @@ IF (n <= 0) RETURN
 ! INITIALIZE IND, M, I, J, AND R
 
 DO  i = 1, n
-  ind(i) = i
+ind(i) = i
 END DO
 m = 1
 i = 1
@@ -1859,9 +1865,9 @@ r = .375
 
 20 IF (i >= j) GO TO 70
 IF (r <= .5898437) THEN
-  r = r + .0390625
+r = r + .0390625
 ELSE
-  r = r - .21875
+r = r - .21875
 END IF
 
 ! INITIALIZE K
@@ -1870,7 +1876,7 @@ END IF
 
 ! SELECT A CENTRAL ELEMENT OF X AND SAVE IT IN T
 
-ij = i + r*(j-i)
+ij = int(i + r*(j-i))
 it = ind(ij)
 t = x(it)
 
@@ -1879,10 +1885,10 @@ t = x(it)
 
 indx = ind(i)
 IF (x(indx) > t) THEN
-  ind(ij) = indx
-  ind(i) = it
-  it = indx
-  t = x(it)
+ind(ij) = indx
+ind(i) = it
+it = indx
+t = x(it)
 END IF
 
 ! INITIALIZE L
@@ -1937,11 +1943,11 @@ IF (k <= l) GO TO 40
 !   ARRAY YET TO BE SORTED
 
 IF (l-i > j-k) THEN
-  il(m) = i
-  iu(m) = l
-  i = k
-  m = m + 1
-  GO TO 80
+il(m) = i
+iu(m) = l
+i = k
+m = m + 1
+GO TO 80
 END IF
 
 il(m) = k
@@ -1982,23 +1988,23 @@ GO TO 90
 END SUBROUTINE qsortd
 
 
-	subroutine GRID(X,W,n,Xbb,nb)
-	implicit none
-	integer*4 i,nb,n
-	double precision X(n),W(n),xmin,xmax,Xbb(nb)
-	xmin=9e9
-	xmax=-xmin
-	do i=1,n
-	if (W(i).gt.0) then
-		xmin=min(X(i),xmin)
-		xmax=max(X(i),xmax)
-	end if
-	end do
+subroutine GRID(X,W,n,Xbb,nb)
+implicit none
+integer(kind=4) i,nb,n
+double precision X(n),W(n),xmin,xmax,Xbb(nb)
+xmin=9e9
+xmax=-xmin
+do i=1,n
+if (W(i).gt.0) then
+xmin=min(X(i),xmin)
+xmax=max(X(i),xmax)
+end if
+end do
 
-	do i=1,nb
-		Xbb(i)=xmin+(i-1)*(xmax-xmin)/(nb-1)
-	end do
-	end
+do i=1,nb
+Xbb(i)=xmin+(i-1)*(xmax-xmin)/(nb-1)
+end do
+end
 
 subroutine Interpola (Xgrid,Pgrid,kbin,X0,P0,P1,n)
 ! Fit a quintic spline with user control of knot positions.
@@ -2016,66 +2022,66 @@ subroutine Interpola (Xgrid,Pgrid,kbin,X0,P0,P1,n)
 ! Latest revision - 2 November 2003
 ! Alan Miller (amiller @ bigpond.net.au)
 
-	USE lsq
-	IMPLICIT NONE
+USE lsq
+IMPLICIT NONE
 
-	INTEGER*4                 :: i, ier, iostatus, j, n, nk,next_knot,pos,kbin,icont
-	double precision               :: t, t1, y, dist,Xgrid(kbin),Pgrid(kbin),X0(n),P0(n),P1(n),P2(n)
-	double precision, PARAMETER    :: one = 1.0_dp,cero=0.0_dp
-	double precision, ALLOCATABLE  :: knot(:), xrow(:), b(:)
-
-
-
-	icont=0
-	do i=1,kbin
-	if (pgrid(i).ne.-1.0) icont=icont+1
-	end do
-
-	if (icont.gt.5) then
-	nk=icont/5
+INTEGER(KIND=4)                :: i, ier, j, n, nk,next_knot,kbin,icont
+double precision               :: t, t1, y, dist,Xgrid(kbin),Pgrid(kbin),X0(n),P0(n),P1(n),P2(n)
+double precision, PARAMETER    :: one = 1.0_dp,cero=0.0_dp
+double precision, ALLOCATABLE  :: knot(:), xrow(:), b(:)
 
 
-  !numero de nodos
-	!if (nk>kbin/5) stop ! '** Too many knots requested - TRY AGAIN'
 
-	ALLOCATE ( knot(nk),xrow(0:5+nk), b(0:5+nk) )
+icont=0
+do i=1,kbin
+if (pgrid(i).ne.-1.0) icont=icont+1
+end do
+
+if (icont.gt.5) then
+nk=icont/5
+
+
+!numero de nodos
+!if (nk>kbin/5) stop ! '** Too many knots requested - TRY AGAIN'
+
+ALLOCATE ( knot(nk),xrow(0:5+nk), b(0:5+nk) )
 
 
 ! Calculate knot positions, evenly spaced.
 
-	dist = (Xgrid(kbin) - Xgrid(1)) / (nk + 1)
-	t1=Xgrid(1)
-	DO i = 1, nk
-	knot(i) = t1 + dist * i
-	END DO
+dist = (Xgrid(kbin) - Xgrid(1)) / (nk + 1)
+t1=Xgrid(1)
+DO i = 1, nk
+knot(i) = t1 + dist * i
+END DO
 
 ! WRITE(9, '(a, i4)') 'Number of knots = ', nk
 
 
-	next_knot = 1
+next_knot = 1
 
 ! Initialize the least-squares calculations
-	CALL startup(6+nk, .FALSE.)
+CALL startup(6+nk, .FALSE.)
 
-	DO i=1,kbin
-		t=Xgrid(i)
-		y=Pgrid(i)
-		xrow(0) = one
-		xrow(1) = (t - t1)
-		xrow(2) = (t - t1) * xrow(1)
-		xrow(3) = (t - t1) * xrow(2)
-		xrow(4) = (t - t1) * xrow(3)
-		xrow(5) = (t - t1) * xrow(4)
-		IF (t > knot(next_knot)) next_knot = MIN(nk, next_knot + 1)
-		DO j = 1, next_knot-1
-			xrow(5+j) = (t - knot(j))**5
-		END DO
-		xrow(5+next_knot:5+nk) = 0.0_dp
-	if (y.ne.-1.0_dp) CALL includ(one, xrow, y)
+DO i=1,kbin
+t=Xgrid(i)
+y=Pgrid(i)
+xrow(0) = one
+xrow(1) = (t - t1)
+xrow(2) = (t - t1) * xrow(1)
+xrow(3) = (t - t1) * xrow(2)
+xrow(4) = (t - t1) * xrow(3)
+xrow(5) = (t - t1) * xrow(4)
+IF (t > knot(next_knot)) next_knot = MIN(nk, next_knot + 1)
+DO j = 1, next_knot-1
+xrow(5+j) = (t - knot(j))**5
+END DO
+xrow(5+next_knot:5+nk) = 0.0_dp
+if (y.ne.-1.0_dp) CALL includ(one, xrow, y)
 
-	END DO
+END DO
 
-	CALL regcf(b, 6+nk, ier)
+CALL regcf(b, 6+nk, ier)
 
 !WRITE(*, *) ' Coefficient   Value'
 !WRITE(*, '(a, g13.5)') ' Constant   ', b(0)
@@ -2093,52 +2099,52 @@ subroutine Interpola (Xgrid,Pgrid,kbin,X0,P0,P1,n)
 
 
 !call Ordena(X0,n,II)
-	next_knot = 1
-	DO i = 1, n
-	next_knot = 1
-	t=X0(i)
-	xrow(0) = one
-	xrow(1) = (t - t1)
-	xrow(2) = (t - t1) * xrow(1)
-	xrow(3) = (t - t1) * xrow(2)
-	xrow(4) = (t - t1) * xrow(3)
-	xrow(5) = (t - t1) * xrow(4)
-	if (i.eq.45) then
-	continue
-	end if
-55	continue  
-	IF (t > knot(next_knot)) THEN
-	next_knot = next_knot + 1
-	IF (next_knot <= nk) THEN
+next_knot = 1
+DO i = 1, n
+next_knot = 1
+t=X0(i)
+xrow(0) = one
+xrow(1) = (t - t1)
+xrow(2) = (t - t1) * xrow(1)
+xrow(3) = (t - t1) * xrow(2)
+xrow(4) = (t - t1) * xrow(3)
+xrow(5) = (t - t1) * xrow(4)
+if (i.eq.45) then
+continue
+end if
+55 continue
+IF (t > knot(next_knot)) THEN
+next_knot = next_knot + 1
+IF (next_knot <= nk) THEN
 !      WRITE(9, '(a, g13.5)') 'New knot at t = ', knot(next_knot-1)
-       goto 55
-	ELSE
-      next_knot = nk + 1 
-	  goto 56
-	END IF
-	END IF
+goto 55
+ELSE
+next_knot = nk + 1
+goto 56
+END IF
+END IF
 
-56	continue
-	DO j = 1, next_knot-1
-	xrow(5+j) = (t - knot(j))**5
-	END DO
-	p0(i) = DOT_PRODUCT( b(0:5+next_knot-1), xrow(0:5+next_knot-1) )
-	p2(i) = ((20*b(5)*(t-t1) + 12*b(4))*(t-t1) + 6*b(3))*(t-t1) +2*b(2)
-	p1(i) = (((5*b(5)*(t-t1) + 4*b(4))*(t-t1) + 3*b(3))*(t-t1) +2*b(2))*(t-t1) + b(1)
-	DO j = 1, next_knot-1
-	p1(i) = p1(i) + 5*b(j+5)*(t - knot(j))**4
-	p2(i) = p2(i) + 20*b(j+5)*(t - knot(j))**3
-	END DO
+56 continue
+DO j = 1, next_knot-1
+xrow(5+j) = (t - knot(j))**5
+END DO
+p0(i) = DOT_PRODUCT( b(0:5+next_knot-1), xrow(0:5+next_knot-1) )
+p2(i) = ((20*b(5)*(t-t1) + 12*b(4))*(t-t1) + 6*b(3))*(t-t1) +2*b(2)
+p1(i) = (((5*b(5)*(t-t1) + 4*b(4))*(t-t1) + 3*b(3))*(t-t1) +2*b(2))*(t-t1) + b(1)
+DO j = 1, next_knot-1
+p1(i) = p1(i) + 5*b(j+5)*(t - knot(j))**4
+p2(i) = p2(i) + 20*b(j+5)*(t - knot(j))**3
+END DO
 !  WRITE(9, '(f8.3, 4g13.4)') t, d1, d2, fitted, y
 
 !  write (*,*) i
-	END DO
-	deallocate ( knot,xrow, b )
-	else
-	p0=-1
-	p1=-1
-	p2=-1
-	end if
+END DO
+deallocate ( knot,xrow, b )
+else
+  p0=-1
+p1=-1
+p2=-1
+end if
 
 
-end	subroutine
+end subroutine
