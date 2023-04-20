@@ -1,5 +1,5 @@
-\name{change.binary}
-\alias{change.binary}
+\name{transform}
+\alias{transform}
 
 \title{
 Convert biological sequences into binary code
@@ -8,12 +8,12 @@ Convert biological sequences into binary code
 Biological sequences are categorical variables. With this function the four nucleotides are coded with two bits, 0 and 1 (binary numeral system) for being used by almost all modern computers.
 }
 \usage{
-change.binary(x)
+transform(x)
 }
 
 \arguments{
   \item{x}{
- The object obtained with \code{\link{read.all}} or \code{\link{read.genbank}} functions is the argument required for \code{change.binary}. The nature of the sequence is DNA. Sequences are returned as a vector of single characters.
+ The object obtained with \code{\link{read.all}} or \code{\link{read.genbank}} functions is the argument required for \code{transform}. The nature of the sequence is DNA. Sequences are returned as a vector of single characters.
 }
 }
 
@@ -31,7 +31,7 @@ Nora M. Villanueva and Marta Sestelo.
 library(seq2R)
 
 mthumanDNA <- read.genbank("NC_012920")
-DNA <- change.binary(mthumanDNA)
+DNA <- transform(mthumanDNA)
 DNA
 }
 

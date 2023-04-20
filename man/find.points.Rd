@@ -1,15 +1,15 @@
-\name{change.points}
-\alias{change.points}
+\name{find.points}
+\alias{find.points}
 
 \title{
 Simple method to detect compositional changes in genomic sequences
 }
 \description{
-\code{change.points} is used to detect changes at genomic sequences composition. The method is based on fitting nonparametric models by using local linear kernel smoothers.
+\code{find} is used to detect changes at genomic sequences composition. The method is based on fitting nonparametric models by using local linear kernel smoothers.
 }
 \usage{
-change.points(x,kbin= 300, p= 3, h=-1, W= 1, nboot=100, kernel="gaussian",
-nh= 20, seed = NULL, ...)
+find.points(x,kbin= 300, p= 3, bandwidth=-1, weights= 1, nboot=100, kernel="gaussian",
+n.bandwidths= 20, seed = NULL, ...)
 }
 
 \arguments{
@@ -22,10 +22,10 @@ The number of binning nodes over which the function is to be estimated.
   \item{p}{
 Degree of the polynomial. By default \code{p=3}.
 }
-  \item{h}{
+  \item{bandwidth}{
 The kernel bandwidth or smoothing parameter. Large values of bandwidth make smoother estimates, smaller values of bandwidth make less smooth estimates. The default \code{h=-1} is a bandwidth compute by cross validation.
 }
-  \item{W}{
+  \item{weights}{
 Weights.
 }
  \item{nboot}{
@@ -34,7 +34,7 @@ Number of bootstrap repeats.
 \item{kernel}{
 Character which denotes the kernel function (a symmetric density). By default \code{kernel = "gaussian"}, this is, the Gaussian density function. Also, other types of kernel functions can be used: Epanechnikov and triangle, \code{kernel="Epanech"} and \code{kernel="triang"}, respectively.
 }
-\item{nh}{Number that it will be used to calculate the grid of bandwidths in a range between 0 and 1. In this grid, it will be selected the optimum bandwidth by cross-validation.If the optimum bandwidth value is close to 0, we will obtain rough estimates; when it is close to 1, we will obtain smooth estimates.
+\item{n.bandwidths}{Number that it will be used to calculate the grid of bandwidths in a range between 0 and 1. In this grid, it will be selected the optimum bandwidth by cross-validation.If the optimum bandwidth value is close to 0, we will obtain rough estimates; when it is close to 1, we will obtain smooth estimates.
 }
 \item{seed}{Seed to be used in the bootstrap procedure.}
 \item{\ldots}{Other options.}
@@ -62,8 +62,8 @@ library(seq2R)
 
 
 mtDNAhuman <- read.genbank("NC_012920")
-DNA<- change.binary(mtDNAhuman)
-seq1<-change.points(DNA)
+DNA<- transform(mtDNAhuman)
+seq1<-find.points(DNA)
 seq1
 }
 

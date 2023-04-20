@@ -5,7 +5,7 @@
 Critical points (maxima and minima)
 }
 \description{
-Function that maximizes or minimizes the first derivative of the model obtained with \code{\link{change.points}} function. Also, it is included their 95\% confidence intervals.
+Function that maximizes or minimizes the first derivative of the model obtained with \code{\link{find.points}} function. Also, it is included their 95\% confidence intervals.
 }
 \usage{
 critical(model, base.pairs = NULL)
@@ -30,8 +30,8 @@ Nora M. Villanueva and Marta Sestelo.
 library(seq2R)
 
 mthumanDNA <- read.genbank("NC_012920")
-DNA <- change.binary(mthumanDNA)
-seq1 <- change.points(DNA)
+DNA <- transform(mthumanDNA)
+seq1 <- find.points(DNA, nboot = 10)
 
 
 critical(seq1,base.pairs="CG")

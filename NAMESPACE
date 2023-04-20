@@ -1,5 +1,5 @@
-export(change.binary)
-export(change.points)
+export(transform)
+export(find.points)
 export(critical)
 export(plot.change.points)
 export(print.change.points)

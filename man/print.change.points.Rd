@@ -2,10 +2,10 @@
 \alias{print.change.points}
 
 \title{
-Short change.points summary
+Short find.points summary
 }
 \description{
-\code{\link{change.points}} summary.}
+\code{\link{find.points}} summary.}
 \usage{
 \method{print}{change.points}(x=model,...)
 }
@@ -29,14 +29,14 @@ The function computes and returns a list of short information for a fitted \code
 Nora M. Villanueva and Marta Sestelo.
 }
 \note{
-See details in \code{\link{change.points}}.
+See details in \code{\link{find.points}}.
 }
 
 
 \examples{
 library(seq2R)
 mtDNAhuman <- read.genbank("NC_012920")
-DNA<- change.binary(mtDNAhuman)
-seq1<-change.points(DNA)
+DNA <- transform(mtDNAhuman)
+seq1 <- find.points(DNA)
 seq1
 }

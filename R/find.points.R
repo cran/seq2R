@@ -1,6 +1,13 @@
-change.points <-
-function(x,kbin=300, p=3,h=-1,W=1,nboot=100,kernel="gaussian",nh=20, seed = NULL, ...){
-	etiquetas<-unique(names(x))
+find.points <-
+  function(x, kbin = 300, p = 3, bandwidth = -1, weights = 1, nboot = 100,
+           kernel = "gaussian", n.bandwidths = 20, seed = NULL, ...){
+
+	h <- bandwidth
+	W <- weights
+	nh <- n.bandwidths
+
+
+  etiquetas<-unique(names(x))
 	if(kernel=="gaussian")  kernel=2
 	if(kernel=="epanech")      kernel=1
 	if(kernel=="triang")     kernel=3
@@ -35,7 +42,6 @@ function(x,kbin=300, p=3,h=-1,W=1,nboot=100,kernel="gaussian",nh=20, seed = NULL
 		n=length(X)
 		umatrixA <- matrix(runif(n*nboot), ncol = nboot, nrow = n)
 		umatrixT <- matrix(runif(n*nboot), ncol = nboot, nrow = n)
-
 		#Y=rep(1,n)
 		W=rep(1,n)
 		#if(W==1){W=rep(1,n)}

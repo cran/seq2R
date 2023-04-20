@@ -67,8 +67,8 @@ library(seq2R)
 
 
 mtDNAhuman <- read.genbank("NC_012920")
-DNA<- change.binary(mtDNAhuman)
-seq1<-change.points(DNA)
+DNA <- transform(mtDNAhuman)
+seq1 <- find.points(DNA)
 
 
 
