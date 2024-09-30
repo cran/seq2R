@@ -30,8 +30,9 @@ Nora M. Villanueva and Marta Sestelo.
 \examples{
 library(seq2R)
 
-mthumanDNA <- read.genbank("NC_012920")
-DNA <- transform(mthumanDNA)
+#mtDNAhum <- read.genbank("NC_012920")
+data(mtDNAhum)
+DNA <- transform(mtDNAhum)
 DNA
 }
 

@@ -57,12 +57,17 @@ The function computes and returns a list of short information for a fitted \code
 Nora M. Villanueva and Marta Sestelo.
 }
 
+\references{N. M. Villanueva, M. Sestelo, M. M. Fonseca and J. Roca-Pardinas (2023).
+seq2R: An R package to detect change points in DNA sequences. Mathematics, 11 (10), 2299.}
+
+
 \examples{
 library(seq2R)
 
 
-mtDNAhuman <- read.genbank("NC_012920")
-DNA<- transform(mtDNAhuman)
+#mtDNAhum <- read.genbank("NC_012920")
+data(mtDNAhum)
+DNA <- transform(mtDNAhum)
 seq1<-find.points(DNA)
 seq1
 }

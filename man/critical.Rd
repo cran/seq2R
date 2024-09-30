@@ -26,11 +26,16 @@ The returned list has two component (\code{$AT}, \code{$CG}). Both of them conta
 Nora M. Villanueva and Marta Sestelo.
 }
 
+
+\references{N. M. Villanueva, M. Sestelo, M. M. Fonseca and J. Roca-Pardinas (2023).
+seq2R: An R package to detect change points in DNA sequences. Mathematics, 11 (10), 2299.}
+
 \examples{
 library(seq2R)
 
-mthumanDNA <- read.genbank("NC_012920")
-DNA <- transform(mthumanDNA)
+#mtDNAhum <- read.genbank("NC_012920")
+data(mtDNAhum)
+DNA <- transform(mtDNAhum)
 seq1 <- find.points(DNA, nboot = 10)
 
 

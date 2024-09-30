@@ -34,8 +34,8 @@ If the computer is not connected to the internet, this function will not work.
 
 \examples{
 library(seq2R)
-mthumanDNA <- read.genbank("NC_012920")
-mthumanDNA
+#mthumanDNA <- read.genbank("NC_012920")
+#mthumanDNA
 }
 
 \keyword{read}

@@ -3,9 +3,9 @@ critical,criticali,criticals,nboot,kbin,kernel,nh, umatrixA, umatrixT)
 
 !!DEC$ ATTRIBUTES DLLEXPORT:: change.points
 !!DEC$ ATTRIBUTES C, REFERENCE, ALIAS:'changepoints_' :: change.points
-
+use iso_fortran_env
 implicit none
-integer(kind=4) i,p,iboot,j,icont,imin,imax,Xmin(200),&
+integer(kind=int32) i,p,iboot,j,icont,imin,imax,Xmin(200),&
 Xmax(200),nh,kernel,n,kbin,nboot
 
 double precision A(n),T(n),X(n),W(n),hA,hT,Signi(5000),&
@@ -173,6 +173,7 @@ end
 
 
 double precision function Bernoulli(p, u)
+use iso_fortran_env
 implicit none
 double precision p, u
 !REAL*8 u
@@ -185,8 +186,9 @@ end
 
 
 integer function which_min(X,n)
+use iso_fortran_env
 implicit none
-integer(kind=4) n,i
+integer(kind=int32) n,i
 double precision X(n),aux
 
 aux=X(1)
@@ -201,8 +203,9 @@ end do
 end
 
 subroutine IC(X0,X,nboot,li,ls)
+use iso_fortran_env
 implicit none
-integer(kind=4) nboot,nalfa,i
+integer(kind=int32) nboot,nalfa,i
 double precision X0,X(nboot),Dif(nboot),li,ls,alfa(3),Q(3)
 do i=1,nboot
 Dif(i)=X(i)-X0
@@ -307,11 +310,11 @@ MODULE lsq
 !--------------------------------------------------------------------------
 
 !     General declarations
-
+use iso_fortran_env
 IMPLICIT NONE
 
-INTEGER(KIND=4), SAVE                :: nobs, ncol, r_dim
-INTEGER(KIND=4), ALLOCATABLE, SAVE   :: vorder(:), row_ptr(:)
+INTEGER(kind=int32), SAVE                :: nobs, ncol, r_dim
+INTEGER(kind=int32), ALLOCATABLE, SAVE   :: vorder(:), row_ptr(:)
 LOGICAL, SAVE                :: initialized = .false.,                  &
                                 tol_set = .false., rss_set = .false.
 
@@ -323,7 +326,7 @@ LOGICAL, SAVE                :: initialized = .false.,                  &
 !       precision', and other systems with larger word lengths which will
 !       give similar accuracy in `single precision'.
 
-INTEGER(KIND=4), PARAMETER           :: dp = SELECTED_REAL_KIND(12,60)
+INTEGER(kind=int32), PARAMETER           :: dp = SELECTED_REAL_KIND(12,60)
 double precision, ALLOCATABLE, SAVE :: d(:), rhs(:), r(:), tol(:), rss(:)
 double precision, SAVE              :: zero = 0.0_dp, one = 1.0_dp, vsmall
 double precision, SAVE              :: sserr, toly
@@ -344,13 +347,13 @@ SUBROUTINE startup(nvar, fit_const)
 !     otherwise fit_const = .false.
 !
 !--------------------------------------------------------------------------
-
+use iso_fortran_env
 IMPLICIT NONE
-INTEGER(KIND=4), INTENT(IN)  :: nvar
+INTEGER(kind=int32), INTENT(IN)  :: nvar
 LOGICAL, INTENT(IN)  :: fit_const
 
 !     Local variable
-INTEGER(KIND=4)   :: i
+INTEGER(kind=int32)   :: i
 
 vsmall = 10. * TINY(zero)
 
@@ -413,14 +416,14 @@ SUBROUTINE includ(weight, xrow, yelem)
 !
 !--------------------------------------------------------------------------
 
-
+use iso_fortran_env
 IMPLICIT NONE
 double precision,INTENT(IN)                    :: weight, yelem
 double precision, DIMENSION(:), INTENT(IN OUT) :: xrow
 
 !     Local variables
 
-INTEGER(KIND=4)     :: i, k, nextr
+INTEGER(kind=int32)     :: i, k, nextr
 double precision   :: w, y, xi, di, wxi, dpi, cbar, sbar, xk
 
 nobs = nobs + 1
@@ -476,15 +479,15 @@ SUBROUTINE regcf(beta, nreq, ifault)
 !     AS75.1.
 !
 !--------------------------------------------------------------------------
-
+use iso_fortran_env
 IMPLICIT NONE
-INTEGER(KIND=4), INTENT(IN)                  :: nreq
-INTEGER(KIND=4), INTENT(OUT)                 :: ifault
+INTEGER(kind=int32), INTENT(IN)                  :: nreq
+INTEGER(kind=int32), INTENT(OUT)                 :: ifault
 double precision, DIMENSION(:), INTENT(OUT) :: beta
 
 !     Local variables
 
-INTEGER(KIND=4)   :: i, j, nextr
+INTEGER(kind=int32)   :: i, j, nextr
 
 !     Some checks.
 
@@ -544,7 +547,7 @@ double precision, INTENT(IN), OPTIONAL :: eps
 
 !     Local variables
 
-INTEGER(KIND=4)    :: col, row, pos
+INTEGER(kind=int32)    :: col, row, pos
 double precision  :: eps1, ten = 10.0, total, work(ncol)
 
 !     EPS is a machine-dependent constant.
@@ -592,13 +595,13 @@ SUBROUTINE sing(lindep, ifault)
 !
 !--------------------------------------------------------------------------
 
-INTEGER(KIND=4), INTENT(OUT)                :: ifault
+INTEGER(kind=int32), INTENT(OUT)                :: ifault
 LOGICAL, DIMENSION(:), INTENT(OUT)  :: lindep
 
 !     Local variables
 
 double precision  :: temp, x(ncol), work(ncol), y, weight
-INTEGER(KIND=4)    :: pos, row, pos2
+INTEGER(kind=int32)    :: pos, row, pos2
 
 ifault = 0
 
@@ -652,7 +655,7 @@ SUBROUTINE ss()
 
 !     Local variables
 
-INTEGER(KIND=4)    :: i
+INTEGER(kind=int32)    :: i
 double precision  :: total
 
 total = sserr
@@ -680,14 +683,14 @@ SUBROUTINE cov(nreq, var, covmat, dimcov, sterr, ifault)
 !
 !--------------------------------------------------------------------------
 
-INTEGER(KIND=4), INTENT(IN)                   :: nreq, dimcov
-INTEGER(KIND=4), INTENT(OUT)                  :: ifault
+INTEGER(kind=int32), INTENT(IN)                   :: nreq, dimcov
+INTEGER(kind=int32), INTENT(OUT)                  :: ifault
 double precision, INTENT(OUT)                :: var
 double precision, DIMENSION(:), INTENT(OUT)  :: covmat, sterr
 
 !     Local variables.
 
-INTEGER(KIND=4)                :: dim_rinv, pos, row, start, pos2, col, pos1, k
+INTEGER(kind=int32)                :: dim_rinv, pos, row, start, pos2, col, pos1, k
 double precision              :: total
 double precision, ALLOCATABLE :: rinv(:)
 
@@ -758,12 +761,12 @@ SUBROUTINE inv(nreq, rinv)
 !
 !--------------------------------------------------------------------------
 
-INTEGER(KIND=4), INTENT(IN)                  :: nreq
+INTEGER(kind=int32), INTENT(IN)                  :: nreq
 double precision, DIMENSION(:), INTENT(OUT) :: rinv
 
 !     Local variables.
 
-INTEGER(KIND=4)    :: pos, row, col, start, k, pos1, pos2
+INTEGER(kind=int32)    :: pos, row, col, start, k, pos1, pos2
 double precision  :: total
 
 !     Invert R ignoring row multipliers, from the bottom up.
@@ -814,13 +817,13 @@ SUBROUTINE partial_corr(in, cormat, dimc, ycorr, ifault)
 !
 !--------------------------------------------------------------------------
 
-INTEGER(KIND=4), INTENT(IN)                  :: in, dimc
-INTEGER(KIND=4), INTENT(OUT)                 :: ifault
+INTEGER(kind=int32), INTENT(IN)                  :: in, dimc
+INTEGER(kind=int32), INTENT(OUT)                 :: ifault
 double precision, DIMENSION(:), INTENT(OUT) :: cormat, ycorr
 
 !     Local variables.
 
-INTEGER(KIND=4)    :: base_pos, pos, row, col, col1, col2, pos1, pos2
+INTEGER(kind=int32)    :: base_pos, pos, row, col, col1, col2, pos1, pos2
 double precision  :: rms(in+1:ncol), sumxx, sumxy, sumyy, work(in+1:ncol)
 
 !     Some checks.
@@ -910,13 +913,13 @@ SUBROUTINE vmove(from, to, ifault)
 !
 !--------------------------------------------------------------------------
 
-INTEGER(KIND=4), INTENT(IN)    :: from, to
-INTEGER(KIND=4), INTENT(OUT)   :: ifault
+INTEGER(kind=int32), INTENT(IN)    :: from, to
+INTEGER(kind=int32), INTENT(OUT)   :: ifault
 
 !     Local variables
 
 double precision  :: d1, d2, x, d1new, d2new, cbar, sbar, y
-INTEGER(KIND=4)    :: m, first, last, inc, m1, m2, mp1, col, pos, row
+INTEGER(kind=int32)    :: m, first, last, inc, m1, m2, mp1, col, pos, row
 
 !     Check input parameters
 
@@ -1039,13 +1042,13 @@ SUBROUTINE reordr(list, n, pos1, ifault)
 !
 !--------------------------------------------------------------------------
 
-INTEGER(KIND=4), INTENT(IN)               :: n, pos1
-INTEGER(KIND=4), DIMENSION(:), INTENT(IN) :: list
-INTEGER(KIND=4), INTENT(OUT)              :: ifault
+INTEGER(kind=int32), INTENT(IN)               :: n, pos1
+INTEGER(kind=int32), DIMENSION(:), INTENT(IN) :: list
+INTEGER(kind=int32), INTENT(OUT)              :: ifault
 
 !     Local variables.
 
-INTEGER(KIND=4)    :: next, i, l, j
+INTEGER(kind=int32)    :: next, i, l, j
 
 !     Check N.
 
@@ -1096,14 +1099,14 @@ SUBROUTINE hdiag(xrow, nreq, hii, ifault)
 ! row (xrow).   The variance of the i-th least-squares residual is (1 - hii).
 !--------------------------------------------------------------------------
 
-INTEGER(KIND=4), INTENT(IN)                  :: nreq
-INTEGER(KIND=4), INTENT(OUT)                 :: ifault
+INTEGER(kind=int32), INTENT(IN)                  :: nreq
+INTEGER(kind=int32), INTENT(OUT)                 :: ifault
 double precision, DIMENSION(:), INTENT(IN)  :: xrow
 double precision, INTENT(OUT)               :: hii
 
 !     Local variables
 
-INTEGER(KIND=4)    :: col, row, pos
+INTEGER(kind=int32)    :: col, row, pos
 double precision  :: total, wk(ncol)
 
 !     Some checks
@@ -1142,13 +1145,13 @@ FUNCTION varprd(x, nreq) RESULT(fn_val)
 !
 !--------------------------------------------------------------------------
 
-INTEGER(KIND=4), INTENT(IN)                  :: nreq
+INTEGER(kind=int32), INTENT(IN)                  :: nreq
 double precision, DIMENSION(:), INTENT(IN)  :: x
 double precision                            :: fn_val
 
 !     Local variables
 
-INTEGER(KIND=4)    :: ifault, row
+INTEGER(kind=int32)    :: ifault, row
 double precision  :: var, wk(nreq)
 
 !     Check input parameter values
@@ -1188,13 +1191,13 @@ SUBROUTINE bksub2(x, b, nreq)
 !
 !--------------------------------------------------------------------------
 
-INTEGER(KIND=4), INTENT(IN)                  :: nreq
+INTEGER(kind=int32), INTENT(IN)                  :: nreq
 double precision, DIMENSION(:), INTENT(IN)  :: x
 double precision, DIMENSION(:), INTENT(OUT) :: b
 
 !     Local variables
 
-INTEGER(KIND=4)    :: pos, row, col
+INTEGER(kind=int32)    :: pos, row, col
 double precision  :: temp
 
 !     Solve by back-substitution, starting from the top.
@@ -1225,8 +1228,9 @@ END MODULE lsq
 !*******************************************************
 subroutine WRegresion(X,Y,W,n,nvar,beta,sterr,se,r2,iopt)
 USE lsq
+use iso_fortran_env
 IMPLICIT NONE
-INTEGER(KIND=4)             :: i, ier, j, m, n,nvar,iopt
+INTEGER(kind=int32)             :: i, ier, j, m, n,nvar,iopt
 double precision          :: x(n,nvar), y(n),W(n), xrow(0:nvar+1), beta(0:nvar+1),var, &
 covmat(231), sterr(0:nvar+1), totalSS,se,r2
 LOGICAL             :: fit_const = .TRUE., lindep(0:20)
@@ -1292,8 +1296,9 @@ END
 
 
 subroutine quantile (X,n,alfa,nalfa,Q)
+use iso_fortran_env
 implicit none
-INTEGER(KIND=4) n,nalfa,ip,j,ind(n)
+INTEGER(kind=int32) n,nalfa,ip,j,ind(n)
 double precision X(n),alfa(nalfa),Q(nalfa),R,xest
 call qsortd(x,ind,n)
 
@@ -1312,8 +1317,9 @@ end do
 end
 
 double precision function Cuant (X,n,alfa)
+use iso_fortran_env
 implicit none
-INTEGER(KIND=4) n,ip,ind(n)
+INTEGER(kind=int32) n,ip,ind(n)
 double precision X(n),alfa,Q,R,xest
 call qsortd(x,ind,n)
 IP=int(alfa*(n+1.))
@@ -1333,9 +1339,10 @@ end
 !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 !  Subroutine RFAST_H
 !*********************************************************
-  subroutine rfast_h(X,Y,W,n,h,p,Xb,Pb,kbin,kernel,nh)
+subroutine rfast_h(X,Y,W,n,h,p,Xb,Pb,kbin,kernel,nh)
+use iso_fortran_env
 implicit none
-INTEGER(KIND=4) n,i,j,kbin,p,nh,kernel
+INTEGER(kind=int32) n,i,j,kbin,p,nh,kernel
 double precision x(n),y(n),W(n),Xb(kbin),Yb(kbin),Wb(kbin),&
   Pb(kbin,3),h,&
  rango,hmin,hmax,beta(10),xbb(kbin),pred(8)
@@ -1391,9 +1398,10 @@ end subroutine
 !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 !	BINNING LINEAL
 !***************************************************
-  subroutine Binning(X,Y,n,W,Xb,Yb,Wb,kbin)
+subroutine Binning(X,Y,n,W,Xb,Yb,Wb,kbin)
+use iso_fortran_env
 implicit none
-INTEGER(KIND=4) n,i,j,kbin
+INTEGER(kind=int32) n,i,j,kbin
 double precision x(n),y(n),W(n),Xb(kbin),Yb(kbin),Wb(kbin),&
   Area(2),dis1,dis2
 
@@ -1436,14 +1444,15 @@ end subroutine
 !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   !	VENTANA1D
 !**********************************************************
-  subroutine Ventana1D(X,Y,W,n,h,p,hmin,hmax,nh,rango,kernel)
+subroutine Ventana1D(X,Y,W,n,h,p,hmin,hmax,nh,rango,kernel)
+use iso_fortran_env
 implicit none
-INTEGER(KIND=4) i,p,n,ih,nh,ih2,Err(nh),kernel
+INTEGER(kind=int32) i,p,n,ih,nh,ih2,Err(nh),kernel
 double precision x(n),x2(n),Y(n),h,hmin,hmax,&
   pred(8),W(n),hgrid(nh),ErrH(5000),sumW,rango,&
   VT,sumy,sumy2,maxr2,minr2
 double precision,allocatable::ErrCV(:,:),Predh(:,:),WCV(:)
-INTEGER(KIND=4),external::which_min
+INTEGER(kind=int32),external::which_min
 allocate(ErrCV(n,nh),Predh(n,nh),WCV(n))
 
 do ih=1,nh
@@ -1542,9 +1551,10 @@ end subroutine
 !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   !  Subroutine  REG1D
 !****************************************************
-  subroutine Reg1D(X,Y,W,n,h,p,x0,pred,rango,kernel,ifcv)
+subroutine Reg1D(X,Y,W,n,h,p,x0,pred,rango,kernel,ifcv)
+use iso_fortran_env
 implicit none
-INTEGER(KIND=4) i,j,icont,p,iopt,ier,n,kernel,ifcv
+INTEGER(kind=int32) i,j,icont,p,iopt,ier,n,kernel,ifcv
 double precision x(n),Y(n),h,waux,Beta(10),Sterr(20),se,r2,&
   pred(8),W(n),x0,rango,h2,u,pred2
 double precision,allocatable::Vx(:),Vy(:),WW(:),XX(:,:)
@@ -1626,9 +1636,10 @@ end subroutine
 !%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   !		REGRESION LINEAL
 !***************************************************
-  subroutine Reglineal (X,Y,W,n,p,Beta)
+subroutine Reglineal (X,Y,W,n,p,Beta)
+use iso_fortran_env
 implicit none
-INTEGER(KIND=4) i,n,j,p,iopt
+INTEGER(kind=int32) i,n,j,p,iopt
 double precision X(n),Y(n),W(n),beta(p+1),&
   sterr(p+1),se,r2,X2(n,p+1)
 
@@ -1648,12 +1659,12 @@ end subroutine
 !***************************************************
   !			WREGRESION_Javier  (ier)
 !***************************************************
-  subroutine WRegresion_Javier(X,Y,W,n,nvar,beta,sterr,se,r2,iopt,ier)
+subroutine WRegresion_Javier(X,Y,W,n,nvar,beta,sterr,se,r2,iopt,ier)
 USE lsq
-
+use iso_fortran_env
 IMPLICIT NONE
 
-INTEGER(KIND=4)             :: i, ier, j, m, n,nvar,iopt
+INTEGER(kind=int32)             :: i, ier, j, m, n,nvar,iopt
 
 double precision          :: x(n,nvar), y(n),W(n), xrow(0:nvar+1),&
 
@@ -1786,10 +1797,10 @@ END
 
 ! Code converted using TO_F90 by Alan Miller
 ! Date: 2002-12-18  Time: 11:55:47
-
+use iso_fortran_env
 IMPLICIT NONE
-INTEGER(KIND=4), PARAMETER  :: dp = SELECTED_REAL_KIND(12, 60)
-INTEGER(KIND=4) n,ind(n)
+INTEGER(kind=int32), PARAMETER  :: dp = SELECTED_REAL_KIND(12, 60)
+INTEGER(kind=int32) n,ind(n)
 double precision x(n)
 
 
@@ -1831,8 +1842,8 @@ double precision x(n)
 
 !*********************************************************************
 
-  INTEGER(KIND=4)   :: iu(21), il(21)
-INTEGER(KIND=4)   :: m, i, j, k, l, ij, it, itt, indx
+  INTEGER(kind=int32)   :: iu(21), il(21)
+INTEGER(kind=int32)   :: m, i, j, k, l, ij, it, itt, indx
 double precision     :: r
 double precision :: t
 
@@ -1989,8 +2000,9 @@ END SUBROUTINE qsortd
 
 
 subroutine GRID(X,W,n,Xbb,nb)
+use iso_fortran_env
 implicit none
-integer(kind=4) i,nb,n
+integer(kind=int32) i,nb,n
 double precision X(n),W(n),xmin,xmax,Xbb(nb)
 xmin=9e9
 xmax=-xmin
@@ -2023,9 +2035,10 @@ subroutine Interpola (Xgrid,Pgrid,kbin,X0,P0,P1,n)
 ! Alan Miller (amiller @ bigpond.net.au)
 
 USE lsq
+use iso_fortran_env
 IMPLICIT NONE
 
-INTEGER(KIND=4)                :: i, ier, j, n, nk,next_knot,kbin,icont
+INTEGER(kind=int32)                :: i, ier, j, n, nk,next_knot,kbin,icont
 double precision               :: t, t1, y, dist,Xgrid(kbin),Pgrid(kbin),X0(n),P0(n),P1(n),P2(n)
 double precision, PARAMETER    :: one = 1.0_dp,cero=0.0_dp
 double precision, ALLOCATABLE  :: knot(:), xrow(:), b(:)

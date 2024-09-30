@@ -35,8 +35,9 @@ See details in \code{\link{find.points}}.
 
 \examples{
 library(seq2R)
-mtDNAhuman <- read.genbank("NC_012920")
-DNA <- transform(mtDNAhuman)
+#mtDNAhum <- read.genbank("NC_012920")
+data(mtDNAhum)
+DNA <- transform(mtDNAhum)
 seq1 <- find.points(DNA)
 seq1
 }
